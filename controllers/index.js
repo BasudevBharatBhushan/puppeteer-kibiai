@@ -55,7 +55,6 @@ exports.generatePdfFromHtml = async (req, res) => {
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
     const pdfBuffer = await page.pdf({
-      format: format.toUpperCase(), // Puppeteer expects uppercase like 'A4', 'LETTER'
       printBackground: true,
       width: "210mm",
       height: "297mm",
