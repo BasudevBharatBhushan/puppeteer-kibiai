@@ -3,12 +3,7 @@ const puppeteer = require("puppeteer");
 exports.generatePdfFromHtml = async (req, res) => {
   const { styles, body } = req.body;
 
-  if (
-    !styles ||
-    !body ||
-    typeof styles !== "string" ||
-    typeof body !== "string"
-  ) {
+  if (!body || typeof styles !== "string" || typeof body !== "string") {
     return res
       .status(400)
       .json({ error: "Invalid input: Expected { styles, body } as strings" });
