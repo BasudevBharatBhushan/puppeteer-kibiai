@@ -47,22 +47,21 @@ exports.generatePdfFromHtml = async (req, res) => {
 
     // Enhance quality by setting device scale factor (for CSS rendering)
     await page.setViewport({
-      width: 1200,
-      height: 800,
-      deviceScaleFactor: 2, // sharper rendering
+      width: 794, // 210mm at 96 DPI
+      height: 1123, // 297mm at 96 DPI
+      deviceScaleFactor: 2,
     });
 
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
     const pdfBuffer = await page.pdf({
+      format: format.toUpperCase(), // 'A4' or 'LETTER'
       printBackground: true,
-      width: "210mm",
-      height: "297mm",
       margin: {
-        top: "20mm",
-        bottom: "20mm",
-        left: "15mm",
-        right: "15mm",
+        top: "10mm",
+        bottom: "10mm",
+        left: "10mm",
+        right: "10mm",
       },
     });
 
