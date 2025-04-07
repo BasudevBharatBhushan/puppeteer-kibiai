@@ -55,14 +55,15 @@ exports.generatePdfFromHtml = async (req, res) => {
     await page.setContent(htmlContent, { waitUntil: "networkidle0" });
 
     const pdfBuffer = await page.pdf({
-      format: format.toUpperCase(), // 'A4' or 'LETTER'
+      format: "A4", // Let puppeteer calculate proper size
       printBackground: true,
       margin: {
-        top: "10mm",
+        top: "10mm", // Match your PAGE_PADDING (~10mm)
         bottom: "10mm",
         left: "10mm",
         right: "10mm",
       },
+      scale: 0.75, // This helps match 96 DPI to 72 DPI (~0.75 ratio)
     });
 
     await browser.close();
