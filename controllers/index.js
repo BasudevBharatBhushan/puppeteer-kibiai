@@ -57,6 +57,8 @@ exports.generatePdfFromHtml = async (req, res) => {
   } catch (error) {
     if (browser) await browser.close();
     console.error("PDF generation error:", error);
-    return res.status(500).json({ error: "Failed to generate PDF" });
+    return res
+      .status(500)
+      .json({ error: "Failed to generate PDF", detail: error.message });
   }
 };
