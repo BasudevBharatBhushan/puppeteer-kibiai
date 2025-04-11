@@ -1,7 +1,7 @@
 const puppeteer = require("puppeteer");
 
 exports.generatePdfFromHtml = async (req, res) => {
-  const { styles, body, pageSize } = req.body;
+  const { styles, body, pageSize, reportID } = req.body;
 
   if (!body || typeof styles !== "string" || typeof body !== "string") {
     return res
@@ -68,17 +68,48 @@ exports.generatePdfFromHtml = async (req, res) => {
 
     await browser.close();
 
-    res.set({
-      "Content-Type": "application/pdf",
-      "Content-Disposition": "attachment; filename=report.pdf",
-    });
+    // Convert PDF buffer to base64
+    const base64PDF = pdfBuffer.toString("base64");
 
-    return res.send(pdfBuffer);
+    // Make the API call to the OData endpoint
+    const axios = require("axios");
+
+    try {
+      const response = await axios({
+        method: "post",
+        url: "https://kibiz.smtech.cloud/fmi/odata/v4/kIbiAI/DYNAMICREPORTS",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Basic RGV2ZWxvcGVyOmFkbWluYml6",
+        },
+        data: {
+          Js_Report_ID: reportID,
+          Rerports_Base64: base64PDF,
+          FileExtension: "pdf",
+        },
+        timeout: 10000, // 10 seconds timeout as specified in the curl command
+      });
+
+      // Extract fmRecordID from the response
+      const fmRecordID = response.data.FM_RecordID;
+
+      // Return only the fmRecordID on success
+      return res.status(200).json({ fmRecordID, status: "OK" });
+    } catch (apiError) {
+      console.error("API call error:", apiError);
+      return res.status(500).json({
+        status: "ERROR",
+        error: "Unable to generate PDF",
+        detail: apiError.message,
+      });
+    }
   } catch (error) {
     if (browser) await browser.close();
     console.error("PDF generation error:", error);
-    return res
-      .status(500)
-      .json({ error: "Failed to generate PDF", detail: error.message });
+    return res.status(500).json({
+      status: "ERROR",
+      error: "Unable to generate PDF",
+      detail: error.message,
+    });
   }
 };
