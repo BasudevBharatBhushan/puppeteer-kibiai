@@ -71,7 +71,7 @@ exports.generatePdfFromHtml = async (req, res) => {
     await browser.close();
 
     // Convert PDF buffer to base64
-    const base64PDF = pdfBuffer.toString("base64");
+    const base64PDF = Buffer.from(pdfBuffer).toString("base64");
 
     try {
       const response = await axios({
