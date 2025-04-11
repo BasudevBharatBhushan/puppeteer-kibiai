@@ -98,7 +98,7 @@ exports.generatePdfFromHtml = async (req, res) => {
       console.error("API call error:", apiError);
       return res.status(500).json({
         status: "ERROR",
-        error: "Unable to generate PDF",
+        error: "Unable to generate PDF1",
         detail: apiError.message,
       });
     }
@@ -107,7 +107,7 @@ exports.generatePdfFromHtml = async (req, res) => {
     console.error("PDF generation error:", error);
     return res.status(500).json({
       status: "ERROR",
-      error: "Unable to generate PDF",
+      error: "Unable to generate PDF2",
       detail: error.message,
     });
   }
