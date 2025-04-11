@@ -67,7 +67,7 @@ exports.generatePdfFromHtml = async (req, res) => {
       await browserPage.setViewport({
         width: 794, // 210mm at 96 DPI
         height: 1123, // 297mm at 96 DPI
-        deviceScaleFactor: 2,
+        deviceScaleFactor: 1.5,
       });
 
       await browserPage.setContent(htmlContent, { waitUntil: "networkidle0" });
@@ -77,11 +77,12 @@ exports.generatePdfFromHtml = async (req, res) => {
         height: "1123px", // Same as your A4_HEIGHT at 96 DPI
         printBackground: true,
         margin: {
-          top: "0px",
-          bottom: "0px",
-          left: "0px",
-          right: "0px",
+          top: "38px",
+          bottom: "38px",
+          left: "38px",
+          right: "38px",
         },
+        preferCSSPageSize: true,
       });
 
       // Check if PDF is not blank before adding it
