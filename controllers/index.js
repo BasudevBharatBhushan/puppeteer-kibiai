@@ -62,7 +62,7 @@ exports.generatePdfFromHtml = async (req, res) => {
       `;
 
       const browserPage = await browser.newPage();
-      const loaded = page.waitForNavigation({
+      const loaded = browserPage.waitForNavigation({
         waitUntil: "load",
       });
 
