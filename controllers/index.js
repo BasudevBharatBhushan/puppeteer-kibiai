@@ -62,6 +62,9 @@ exports.generatePdfFromHtml = async (req, res) => {
       `;
 
       const browserPage = await browser.newPage();
+      const loaded = page.waitForNavigation({
+        waitUntil: "load",
+      });
 
       // Enhance quality by setting device scale factor (for CSS rendering)
       await browserPage.setViewport({
@@ -70,20 +73,24 @@ exports.generatePdfFromHtml = async (req, res) => {
         deviceScaleFactor: 1.5,
       });
 
-      await browserPage.setContent(htmlContent, { waitUntil: "networkidle0" });
+      await browserPage.setContent(htmlContent);
+      await loaded;
 
-      const pdfBuffer = await browserPage.pdf({
-        width: "794px", // Same as your A4_WIDTH at 96 DPI
-        height: "1123px", // Same as your A4_HEIGHT at 96 DPI
-        printBackground: true,
-        margin: {
-          top: "38px",
-          bottom: "38px",
-          left: "38px",
-          right: "38px",
-        },
-        preferCSSPageSize: true,
-      });
+      const pdfBuffer = await browserPage.pdf(
+        //   {
+        //   width: "794px", // Same as your A4_WIDTH at 96 DPI
+        //   height: "1123px", // Same as your A4_HEIGHT at 96 DPI
+        //   printBackground: true,
+        //   margin: {
+        //     top: "38px",
+        //     bottom: "38px",
+        //     left: "38px",
+        //     right: "38px",
+        //   },
+        //   preferCSSPageSize: true,
+        // }
+        { format: "A4" }
+      );
 
       // Check if PDF is not blank before adding it
       const isBlankPage = await isBufferBlankPdf(pdfBuffer);
