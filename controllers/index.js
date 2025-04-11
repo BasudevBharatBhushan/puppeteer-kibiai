@@ -82,7 +82,7 @@ exports.generatePdfFromHtml = async (req, res) => {
           Authorization: "Basic RGV2ZWxvcGVyOmFkbWluYml6",
         },
         data: {
-          Js_Report_ID: reportID,
+          Js_Report_ID: reportID.toString(),
           Rerports_Base64: base64PDF,
           FileExtension: "pdf",
         },
