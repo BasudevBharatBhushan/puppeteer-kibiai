@@ -3,7 +3,7 @@ const axios = require("axios");
 const PDFDocument = require("pdf-lib").PDFDocument;
 
 exports.generatePdfFromHtml = async (req, res) => {
-  const { pages, pageSize, reportID } = req.body;
+  const { pages, pageSize, reportID, styles } = req.body;
 
   // Validate input
   if (!pages || !Array.isArray(pages) || pages.length === 0) {
@@ -36,9 +36,9 @@ exports.generatePdfFromHtml = async (req, res) => {
 
     // Process each page
     for (const page of pages) {
-      const { styles, body } = page;
+      const { body } = page;
 
-      if (typeof styles !== "string" || typeof body !== "string") {
+      if (typeof body !== "string") {
         await browser.close();
         return res.status(400).json({
           error:
