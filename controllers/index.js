@@ -1,4 +1,6 @@
 const puppeteer = require("puppeteer");
+// Make the API call to the OData endpoint
+const axios = require("axios");
 
 exports.generatePdfFromHtml = async (req, res) => {
   const { styles, body, pageSize, reportID } = req.body;
@@ -70,9 +72,6 @@ exports.generatePdfFromHtml = async (req, res) => {
 
     // Convert PDF buffer to base64
     const base64PDF = pdfBuffer.toString("base64");
-
-    // Make the API call to the OData endpoint
-    const axios = require("axios");
 
     try {
       const response = await axios({
