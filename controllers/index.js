@@ -1,14 +1,16 @@
 const puppeteer = require("puppeteer");
-// Make the API call to the OData endpoint
 const axios = require("axios");
+const PDFDocument = require("pdf-lib").PDFDocument;
 
 exports.generatePdfFromHtml = async (req, res) => {
-  const { styles, body, pageSize, reportID } = req.body;
+  const { pages, pageSize, reportID } = req.body;
 
-  if (!body || typeof styles !== "string" || typeof body !== "string") {
-    return res
-      .status(400)
-      .json({ error: "Invalid input: Expected { styles, body } as strings" });
+  // Validate input
+  if (!pages || !Array.isArray(pages) || pages.length === 0) {
+    return res.status(400).json({
+      error:
+        "Invalid input: Expected 'pages' as a non-empty array of { styles, body } objects",
+    });
   }
 
   // Set default page size
@@ -17,23 +19,7 @@ exports.generatePdfFromHtml = async (req, res) => {
     ? pageSize
     : "letter";
 
-  const htmlContent = `
-    <!DOCTYPE html>
-    <html>
-      <head>
-        <meta charset="UTF-8">
-        <style>
-          ${styles}
-        </style>
-      </head>
-      <body>
-        ${body}
-      </body>
-    </html>
-  `;
-
   let browser;
-
   try {
     browser = await puppeteer.launch({
       headless: "new",
@@ -45,33 +31,81 @@ exports.generatePdfFromHtml = async (req, res) => {
       ],
     });
 
-    const page = await browser.newPage();
+    // Create array to hold individual page PDFs
+    const pdfBuffers = [];
 
-    // Enhance quality by setting device scale factor (for CSS rendering)
-    await page.setViewport({
-      width: 794, // 210mm at 96 DPI
-      height: 1123, // 297mm at 96 DPI
-      deviceScaleFactor: 2,
-    });
+    // Process each page
+    for (const page of pages) {
+      const { styles, body } = page;
 
-    await page.setContent(htmlContent, { waitUntil: "networkidle0" });
+      if (typeof styles !== "string" || typeof body !== "string") {
+        await browser.close();
+        return res.status(400).json({
+          error:
+            "Invalid page format: Each page must have 'styles' and 'body' as strings",
+        });
+      }
 
-    const pdfBuffer = await page.pdf({
-      width: "794px", // Same as your A4_WIDTH at 96 DPI
-      height: "1123px", // Same as your A4_HEIGHT at 96 DPI
-      printBackground: true,
-      margin: {
-        top: "0px",
-        bottom: "0px",
-        left: "0px",
-        right: "0px",
-      },
-    });
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset="UTF-8">
+            <style>
+              ${styles}
+            </style>
+          </head>
+          <body>
+            ${body}
+          </body>
+        </html>
+      `;
+
+      const browserPage = await browser.newPage();
+
+      // Enhance quality by setting device scale factor (for CSS rendering)
+      await browserPage.setViewport({
+        width: 794, // 210mm at 96 DPI
+        height: 1123, // 297mm at 96 DPI
+        deviceScaleFactor: 2,
+      });
+
+      await browserPage.setContent(htmlContent, { waitUntil: "networkidle0" });
+
+      const pdfBuffer = await browserPage.pdf({
+        width: "794px", // Same as your A4_WIDTH at 96 DPI
+        height: "1123px", // Same as your A4_HEIGHT at 96 DPI
+        printBackground: true,
+        margin: {
+          top: "0px",
+          bottom: "0px",
+          left: "0px",
+          right: "0px",
+        },
+      });
+
+      // Check if PDF is not blank before adding it
+      const isBlankPage = await isBufferBlankPdf(pdfBuffer);
+      if (!isBlankPage) {
+        pdfBuffers.push(pdfBuffer);
+      }
+
+      await browserPage.close();
+    }
 
     await browser.close();
 
-    // Convert PDF buffer to base64
-    const base64PDF = Buffer.from(pdfBuffer).toString("base64");
+    if (pdfBuffers.length === 0) {
+      return res.status(400).json({
+        error: "No valid content to generate PDF",
+      });
+    }
+
+    // Merge all PDFs into one using PDFLib
+    const mergedPdfBuffer = await mergePdfs(pdfBuffers);
+
+    // Convert merged PDF buffer to base64
+    const base64PDF = Buffer.from(mergedPdfBuffer).toString("base64");
 
     try {
       const response = await axios({
@@ -112,3 +146,42 @@ exports.generatePdfFromHtml = async (req, res) => {
     });
   }
 };
+
+// Helper function to merge PDF buffers into a single PDF
+async function mergePdfs(pdfBuffers) {
+  const mergedPdf = await PDFDocument.create();
+
+  for (const pdfBuffer of pdfBuffers) {
+    const pdf = await PDFDocument.load(pdfBuffer);
+    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+    copiedPages.forEach((page) => {
+      mergedPdf.addPage(page);
+    });
+  }
+
+  return Buffer.from(await mergedPdf.save());
+}
+
+// Helper function to detect if a PDF is blank
+async function isBufferBlankPdf(pdfBuffer) {
+  try {
+    const PDFDocument = require("pdf-lib").PDFDocument;
+    const pdf = await PDFDocument.load(pdfBuffer);
+
+    // Check if PDF has any content
+    if (pdf.getPageCount() === 0) {
+      return true;
+    }
+
+    // Additional checks could be implemented here to detect blank pages
+    // For a more thorough check, you might need to analyze the PDF content more deeply
+
+    // For now, assuming pages with minimal byte size are blank
+    // This threshold may need adjustment based on your specific case
+    const minContentSize = 1000; // Adjust this threshold as needed
+    return pdfBuffer.length < minContentSize;
+  } catch (error) {
+    console.error("Error checking blank PDF:", error);
+    return false; // When in doubt, don't skip the page
+  }
+}
