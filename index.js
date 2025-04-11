@@ -12,11 +12,11 @@ const indexRoutes = require("./routes/index");
 
 // Middlewares
 // app.use(bodyParser.json());
-app.use(bodyParser.text({ type: "text/plain", limit: "10mb" }));
+app.use(express.json({ limit: "2mb" }));
+
 app.use(cookieParser());
 app.use(cors());
 // ✅ This is required to parse JSON request bodies
-app.use(express.json());
 
 // My Routes
 app.use("/api", indexRoutes);
