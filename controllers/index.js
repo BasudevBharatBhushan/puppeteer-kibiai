@@ -151,12 +151,23 @@ exports.generatePdfFromHtml = async (req, res) => {
 async function mergePdfs(pdfBuffers) {
   const mergedPdf = await PDFDocument.create();
 
+  // for (const pdfBuffer of pdfBuffers) {
+  //   const pdf = await PDFDocument.load(pdfBuffer);
+  //   const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+  //   copiedPages.forEach((page) => {
+  //     mergedPdf.addPage(page);
+  //   });
+  // }
+
+  // return Buffer.from(await mergedPdf.save());
   for (const pdfBuffer of pdfBuffers) {
     const pdf = await PDFDocument.load(pdfBuffer);
-    const copiedPages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-    copiedPages.forEach((page) => {
-      mergedPdf.addPage(page);
-    });
+    const pageCount = pdf.getPageCount();
+
+    if (pageCount > 0) {
+      const [firstPage] = await mergedPdf.copyPages(pdf, [0]);
+      mergedPdf.addPage(firstPage);
+    }
   }
 
   return Buffer.from(await mergedPdf.save());
