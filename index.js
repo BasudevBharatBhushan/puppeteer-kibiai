@@ -15,7 +15,12 @@ const indexRoutes = require("./routes/index");
 app.use(express.json({ limit: "2mb" }));
 
 app.use(cookieParser());
-app.use(cors());
+// app.use(cors());
+app.use(cors({
+  origin: "*", // or "*" if you want to allow all temporarily
+  credentials: true // if cookies are used
+}));
+
 // ✅ This is required to parse JSON request bodies
 
 // My Routes
